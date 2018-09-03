@@ -1,0 +1,187 @@
+kind: Template
+apiVersion: v1
+metadata:
+  annotations:
+    description: A tools for managing secrets (http://www.vaulproject.io)
+    tags: instant-app,vault
+  name: vault
+objects:
+- kind: ServiceAccount
+  apiVersion: v1
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+- kind: Service
+  apiVersion: v1
+  metadata:
+    annotations:
+      description: The Vault server's http port
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    ports:
+    - name: 9000-tcp
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    selector:
+      app: ${APPLICATION_NAME}
+      deploymentconfig: ${APPLICATION_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- kind: Route
+  apiVersion: v1
+  id: ${APPLICATION_NAME}-http
+  metadata:
+    annotations:
+      description: Route for application's http service.
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    host: ""
+    to:
+      name: ${APPLICATION_NAME}
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APPLICATION_NAME}
+      deploymentconfig: ${APPLICATION_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: ${APPLICATION_NAME}
+          deploymentconfig: ${APPLICATION_NAME}
+      spec:
+        serviceAccountName: ${APPLICATION_NAME}
+        containers:
+        - image: " "
+          imagePullPolicy: Always
+          name: ${APPLICATION_NAME}
+          ports:
+          - containerPort: 9000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - name: vault-data
+            mountPath: /opt/vault/data
+          - name: vault-config
+            mountPath: /etc/vault/conf
+          readinessProbe:
+              httpGet:
+                path: /
+                port: 9000
+                scheme: HTTP
+              initialDelaySeconds: 3
+              timeoutSeconds: 1
+              periodSeconds: 20
+              successThreshold: 1
+              failureThreshold: 3
+          livenessProbe:
+              httpGet:
+                path: /
+                port: 9000
+                scheme: HTTP
+              initialDelaySeconds: 3
+              timeoutSeconds: 1
+              periodSeconds: 10
+              successThreshold: 1
+              failureThreshold: 3
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: vault-data
+          persistentVolumeClaim:
+            claimName: vault-data
+        - name: vault-config
+          persistentVolumeClaim:
+            claimName: vault-config
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APPLICATION_NAME}:latest
+      type: ImageChange
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    tags:
+    - name: latest
+      from:
+        kind: DockerImage
+        name: docker.io/atgreen/labdroid-vault:latest
+      importPolicy: {}
+      annotations:
+        description: Vault Private Cloud Storage (https://vault.io/)
+        tags: vault
+        version: latest
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: vault-data
+    labels:
+      app: ${APPLICATION_NAME}
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    volumeName: "vault-data"
+    resources:
+      requests:
+        storage: ${VAULT_CAPACITY}
+- kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: vault-config
+    labels:
+      app: ${APPLICATION_NAME}
+  data:
+    vault.hcl: |
+      storage "file" {
+        path    = "/opt/vault"
+      }
+      listener "tcp" {
+        address = "0.0.0.0:8200"
+        tls_disable = 1
+      }
+parameters:
+- description: The name for the application.
+  name: APPLICATION_NAME
+  required: true
+  value: vault
+- description: Volume space available for data, e.g. 512Mi, 2Gi
+  name: VAULT_CAPACITY
+  required: true
+  value: 10Gi
