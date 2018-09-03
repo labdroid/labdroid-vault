@@ -86,9 +86,9 @@ objects:
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - name: vault-data
-            mountPath: /opt/vault/data
+            mountPath: /opt/vault
           - name: vault-config
-            mountPath: /etc
+            mountPath: /etc/vault.hcl
           readinessProbe:
               httpGet:
                 path: /
@@ -173,7 +173,8 @@ objects:
   data:
     vault.hcl: |
       disable_mlock = true
-      backend "file" {
+      ui = true
+      storage "file" {
         path    = "/opt/vault"
       }
       listener "tcp" {
