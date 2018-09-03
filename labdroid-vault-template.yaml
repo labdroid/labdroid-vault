@@ -87,6 +87,8 @@ objects:
           volumeMounts:
           - name: vault-data
             mountPath: /opt/vault/data
+          - name: vault-config
+            mountPath: /etc
           readinessProbe:
               httpGet:
                 path: /
@@ -120,7 +122,7 @@ objects:
             name: vault-config
             items:
               - key: vault.hcl
-                path: /etc
+                path: vault.hcl
     test: false
     triggers:
     - type: ConfigChange
