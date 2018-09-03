@@ -115,6 +115,12 @@ objects:
         - name: vault-data
           persistentVolumeClaim:
             claimName: vault-data
+        - name: vault-config
+          configMap:
+            name: vault-config
+            items:
+              - key: vault.hcl
+                path: /etc
     test: false
     triggers:
     - type: ConfigChange
