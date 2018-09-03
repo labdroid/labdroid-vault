@@ -87,8 +87,6 @@ objects:
           volumeMounts:
           - name: vault-data
             mountPath: /opt/vault/data
-          - name: vault-config
-            mountPath: /etc/vault/conf
           readinessProbe:
               httpGet:
                 path: /
@@ -117,9 +115,6 @@ objects:
         - name: vault-data
           persistentVolumeClaim:
             claimName: vault-data
-        - name: vault-config
-          persistentVolumeClaim:
-            claimName: vault-config
     test: false
     triggers:
     - type: ConfigChange

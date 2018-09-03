@@ -13,4 +13,4 @@ USER 1001
 
 EXPOSE 8200
 
-CMD ["./vault", "server", "--conf", "/etc/vault.hcl"]
+CMD ["./vault", "server", "--config=/etc/vault.hcl"]
