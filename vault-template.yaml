@@ -2,7 +2,7 @@ kind: Template
 apiVersion: v1
 metadata:
   annotations:
-    description: A tools for managing secrets (http://www.vaulproject.io)
+    description: A tool for managing secrets (http://www.vaulproject.io)
     tags: instant-app,vault
   name: vault
 objects:
@@ -23,10 +23,10 @@ objects:
     name: ${APPLICATION_NAME}
   spec:
     ports:
-    - name: 9000-tcp
-      port: 9000
+    - name: 8200-tcp
+      port: 8200
       protocol: TCP
-      targetPort: 9000
+      targetPort: 8200
     selector:
       app: ${APPLICATION_NAME}
       deploymentconfig: ${APPLICATION_NAME}
@@ -80,7 +80,7 @@ objects:
           imagePullPolicy: Always
           name: ${APPLICATION_NAME}
           ports:
-          - containerPort: 9000
+          - containerPort: 8200
             protocol: TCP
           resources: {}
           terminationMessagePath: /dev/termination-log
@@ -90,7 +90,7 @@ objects:
           readinessProbe:
               httpGet:
                 path: /
-                port: 9000
+                port: 8200
                 scheme: HTTP
               initialDelaySeconds: 3
               timeoutSeconds: 1
@@ -100,7 +100,7 @@ objects:
           livenessProbe:
               httpGet:
                 path: /
-                port: 9000
+                port: 8200
                 scheme: HTTP
               initialDelaySeconds: 3
               timeoutSeconds: 1
@@ -140,7 +140,7 @@ objects:
         name: docker.io/atgreen/labdroid-vault:latest
       importPolicy: {}
       annotations:
-        description: Vault Private Cloud Storage (https://vault.io/)
+        description: A tool for managing secrets
         tags: vault
         version: latest
 - kind: PersistentVolumeClaim
@@ -164,7 +164,8 @@ objects:
       app: ${APPLICATION_NAME}
   data:
     vault.hcl: |
-      storage "file" {
+      disable_mlock = true
+      backend "file" {
         path    = "/opt/vault"
       }
       listener "tcp" {
