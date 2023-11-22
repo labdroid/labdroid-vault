@@ -4,7 +4,7 @@ MAINTAINER anthony@atgreen.org
 
 RUN yum install -y unzip && yum clean all -y
 
-RUN curl https://releases.hashicorp.com/vault/1.8.5/vault_1.8.5_linux_amd64.zip > vault.zip \
+RUN curl https://releases.hashicorp.com/vault/1.15.2/vault_1.15.2_linux_amd64.zip > vault.zip \
     && unzip vault.zip && chmod +x vault && rm vault.zip
 
 RUN mkdir /opt/vault
